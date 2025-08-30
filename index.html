@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <h1 class="text-2xl font-bold mb-6 text-center">
+الکوثر (App) 
+</h1>
+
+  <style>
+    :root {
+      --bg: #0b3d2e;
+      --card: #0f4f3b;
+      --accent: #a3d9c9;
+      --accent-2: #dff3ed;
+      --text: #ffffff;
+      --btn: #1aa37a;
+      --btn-dark: #108663;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, Noto Naskh Arabic, "Noto Sans Arabic", sans-serif;
+      background: radial-gradient(1200px 700px at 70% -10%, #146c54 0%, var(--bg) 50%, #06231a 100%);
+      color: var(--text);
+      min-height: 100svh; display: grid; place-items: center; padding: 24px;
+    }
+    .app {
+      width: 100%; max-width: 680px; background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+      backdrop-filter: blur(6px);
+    }
+    header { padding: 20px 20px 0 20px; text-align: center; }
+    h1 { margin: 0 0 10px 0; font-size: 1.6rem; font-weight: 800; letter-spacing: 0.3px; }
+
+    .surah-list, .ayah-list { padding: 20px; display: grid; gap: 12px; }
+
+    button.surah, button.ayah, button.back {
+      width: 100%; border: 0; border-radius: 16px; padding: 16px; text-align: center; cursor: pointer;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--text); font-size: 1.3rem; font-weight: 700;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+    button.ayah.playing { outline: 3px solid var(--accent); box-shadow: 0 0 0 4px rgba(163,217,201,0.18), 0 10px 26px rgba(0,0,0,0.35); }
+
+    .controls { display: none; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 16px 20px; }
+    .controls.active { display: grid; }
+    .controls .group { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 10px 12px; }
+    .controls label { display: block; font-size: 0.85rem; color: var(--accent-2); margin-bottom: 6px; }
+    .controls input[type="number"], .controls input[type="range"] { width: 100%; }
+
+    .footer { display: none; padding: 0 20px 20px 20px; gap: 10px; }
+    .footer.active { display: flex; }
+    .footer button { flex: 1; padding: 12px; border-radius: 12px; border: 0; font-weight: 700; cursor: pointer; font-size: 1rem; }
+    .primary { background: var(--btn); color: #fff; }
+    .primary:active { background: var(--btn-dark); }
+    .muted { background: rgba(255,255,255,0.08); color: var(--accent-2); border: 1px solid rgba(255,255,255,0.12); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>قرآن کریم – آیات سنیں</h1>
+    </header>
+
+    <main>
+      <!-- Surah selection -->
+      <div id="surahList" class="surah-list">
+	   <button class="surah" data-surah="takbeer">تکبیرِ تحریمہ</button>
+	   <button class="surah" data-surah="sanaa">ثنا</button>
+	   <button class="surah" data-surah="tauz">تعوذ</button>
+	   <button class="surah" data-surah="tasmia">تسمیہ</button>
+	   <button class="surah" data-surah="fatiha">سورہ فاتحہ</button>
+	   <button class="surah" data-surah="ikhlas">سورہ اخلاص</button>
+	   <button class="surah" data-surah="ruku">رکوع</button>
+	   <button class="surah" data-surah="tasmeeh">تسمیع</button>
+	   <button class="surah" data-surah="tahmeed">تمحید</button>
+	   <button class="surah" data-surah="sajda">سجدہ</button>
+	   <button class="surah" data-surah="attahiyat">التحیات</button>
+	   <button class="surah" data-surah="darood_ibrahimi">درودِ ابراہیمی</button>
+	   <button class="surah" data-surah="dua_rabbana">دعا</button>
+	   <button class="surah" data-surah="salaam">سلام</button>
+        <button class="surah" data-surah="feel">سورۃ الفیل</button>
+        <button class="surah" data-surah="quraish">سورۃ قریش</button>
+        <button class="surah" data-surah="kawthar">سورۃ الکوثر</button>
+        <button class="surah" data-surah="kafiroon">سورۃ الکافرون</button>
+        <button class="surah" data-surah="ikhlas">سورۃ الاخلاص</button>
+        <button class="surah" data-surah="falaq">سورۃ الفلق</button>
+        <button class="surah" data-surah="naas">سورۃ الناس</button>
+        <button class="surah" data-surah="ayatul-kursi">آیت الکرسی</button>
+      </div>
+
+      <!-- Ayah list -->
+      <div id="ayahList" class="ayah-list" style="display:none"></div>
+
+      <!-- Back button -->
+      <div id="backContainer" style="display:none; padding: 0 20px 20px 20px;">
+        <button class="back">⬅️ واپس جائیں</button>
+      </div>
+
+      <!-- Controls -->
+      <section id="controls" class="controls">
+        <div class="group">
+          <label for="repeatCount">دھرائی (Repeat) – بار</label>
+          <input id="repeatCount" type="number" min="1" max="50" value="3" inputmode="numeric" />
+          <div>
+            <label for="autoAdvance">خود اگلی آیت چلائیں</label>
+            <input id="autoAdvance" type="checkbox" checked />
+          </div>
+        </div>
+        <div class="group">
+          <label for="speed">رفتار (Speed)</label>
+          <input id="speed" type="range" min="0.5" max="1.5" step="0.05" value="1" />
+          <div><span id="speedVal">1.00×</span></div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <div id="footer" class="footer">
+        <button id="stopBtn" class="muted">روکیں</button>
+        <button id="repeatAllBtn" class="primary">سب چلائیں</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const surahListEl = document.getElementById('surahList');
+    const ayahListEl = document.getElementById('ayahList');
+    const backContainer = document.getElementById('backContainer');
+    const backBtn = backContainer.querySelector('button.back');
+    const controlsEl = document.getElementById('controls');
+    const footerEl = document.getElementById('footer');
+
+    const stopBtn = document.getElementById('stopBtn');
+    const repeatAllBtn = document.getElementById('repeatAllBtn');
+    const repeatCountInput = document.getElementById('repeatCount');
+    const autoAdvanceChk = document.getElementById('autoAdvance');
+    const speedSlider = document.getElementById('speed');
+    const speedVal = document.getElementById('speedVal');
+
+    let currentAudio = null;
+    let currentIndex = -1;
+    let remainingRepeats = 1;
+    let playingAll = false;
+    let buttons = [];
+
+    const surahs = {
+	 "takbeer": ["اللهُ اکبر"],
+	 "sanaa": ["مکمل ثنا","سُبْحَانَکَ اللّٰهُمَّ وَبِحَمْدِکَ", "وَتَبَارَکَ اسْمُکَ", "وَتَعَالیٰ جَدُّکَ", "وَلَا اِلٰهَ غَيْرُکْ"],
+	 "tauz": [" اَعُوْذُ بِاللّٰہِ مِنَ الشَّیْطٰنِ الرَّجِیْم"],
+	  "tasmia": ["بِسْمِ اللّٰہِ الرَّحْمٰنِ الرَّحِیْم"],
+	  "fatiha": ["مکمل سورہ فاتحہ","اَلْحَمْدُ لِلّٰهِ رَبِّ الْعٰلَمِيْنَ", "الرَّحْمٰنِ الرَّحِيْمِ","مٰلِكِ يَوْمِ الدِّيْنِ","اِيَّاكَ نَعْبُدُ وَاِيَّاكَ نَسْتَعِيْنُ","اِهْدِنَا الصِّرَاطَ الْمُسْتَقِيْمَ","صِرَاطَ الَّذِيْنَ اَنْعَمْتَ عَلَيْهِمْ ەۙ غَيْرِ الْمَغْضُوْبِ عَلَيْهِمْ وَلَا الضَّاۤلِّيْنَ" ],
+	  "ikhlas": ["قُلْ هُوَ اللَّهُ أَحَدٌ", "اللَّهُ الصَّمَدُ", "لَمْ يَلِدْ وَلَمْ يُولَدْ", "وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ"],
+	  "ruku": ["سُبْحَانَ رَبِّيَ الْعَظِيْمِ"],
+  "tasmeeh": ["سَمِعَ اللّٰهُ لِمَنْ حَمِدَهٗ"],
+  "tahmeed": ["رَبَّنَا لَكَ الْحَمْدُ"],
+  "sajda": ["سُبْحَانَ رَبِّيَ الْأَعْلٰى"],
+  "attahiyat":  ["مکمل التحیات","اَلتَّحِيَّاتُ لِلّٰهِ وَالصَّلَوٰتُ وَالطَّيِّبَاتُ", "اَلسَّلَامُ عَلَيْكَ اَيُّهَا النَّبِيُّ ", "  وَرَحْمَةُ اللّٰهِ وَبَرَكَاتُهٗ", " اَلسَّلَامُ عَلَيْنَا وَعَلٰی عِبَادِ اللّٰهِ الصَّالِحِيْن", "اَشْهَدُ اَنْ لَّا اِلٰهَ اِلَّا اللّٰهُ ", "وَاَشْهَدُ اَنَّ مُحَمَّدًا عَبْدُهٗ وَرَسُوْلُهٗ"],
+   "darood_ibrahimi":["اَللّٰهُمَّ صَلِّ عَلٰی مُحَمَّدٍ وَّعَلٰى اٰلِ مُحَمَّدٍ"," كَمَا صَلَّيْتَ عَلٰى اِبْرَاهِيْمَ وَعَلٰى اٰلِ اِبْرَاهِيْمَ"," اِنَّكَ حَمِيْدٌ مَّجِيْدٌ"," اَللّٰهُمَّ بَارِكْ عَلٰی مُحَمَّدٍ وَّعَلٰى اٰلِ مُحَمَّدٍ ","	كَمَا بَارَكْتَ عَلٰى اِبْرَاهِيْمَ وَعَلٰى اٰلِ اِبْرَاهِيْمَ "," اِنَّكَ حَمِيْدٌ مَّجِيْدٌ"],
+  "dua_rabbana": ["رَبَّنَا اٰتِنَا فِي الدُّنْيَا حَسَنَةً", "	وَّفِي الْاٰخِرَةِ حَسَنَةً ", "	وَّقِنَا عَذَابَ النَّارِ"],
+  "salaam": ["اَلسَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللّٰه - اَلسَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللّٰه" ],
+      "feel": ["مکمل سورہ فیل","أَلَمْ تَرَ كَيْفَ فَعَلَ رَبُّكَ بِأَصْحَابِ الْفِيلِ", "أَلَمْ يَجْعَلْ كَيْدَهُمْ فِي تَضْلِيلٍ", "وَأَرْسَلَ عَلَيْهِمْ طَيْرًا أَبَابِيلَ", "تَرْمِيهِمْ بِحِجَارَةٍ مِّن سِجِّيلٍ", "فَجَعَلَهُمْ كَعَصْفٍ مَّأْكُولٍ"],
+      "quraish": ["لِإِيلَافِ قُرَيْشٍ", "إِيلَافِهِمْ رِحْلَةَ الشِّتَاءِ وَالصَّيْفِ", "فَلْيَعْبُدُوا رَبَّ هَذَا الْبَيْتِ", "الَّذِي أَطْعَمَهُم مِّن جُوعٍ وَآمَنَهُم مِّنْ خَوْفٍ"],
+      "kawthar": ["إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ", "فَصَلِّ لِرَبِّكَ وَانْحَرْ", "إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ"],
+      "kafiroon": ["قُلْ يَا أَيُّهَا الْكَافِرُونَ", "لَا أَعْبُدُ مَا تَعْبُدُونَ", "وَلَا أَنتُمْ عَابِدُونَ مَا أَعْبُدُ", "وَلَا أَنَا عَابِدٌ مَّا عَبَدتُّمْ", "وَلَا أَنتُمْ عَابِدُونَ مَا أَعْبُدُ", "لَكُمْ دِينُكُمْ وَلِيَ دِينِ"],
+      "ikhlas": ["قُلْ هُوَ اللَّهُ أَحَدٌ", "اللَّهُ الصَّمَدُ", "لَمْ يَلِدْ وَلَمْ يُولَدْ", "وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ"],
+      "falaq": ["قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ", "مِن شَرِّ مَا خَلَقَ", "وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ", "وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ", "وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ"],
+      "naas": ["قُلْ أَعُوذُ بِرَبِّ النَّاسِ", "مَلِكِ النَّاسِ", "إِلَٰهِ النَّاسِ", "مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ", "الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ", "مِنَ الْجِنَّةِ وَالنَّاسِ"],
+      "ayatul-kursi": [
+  "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ",
+  "لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ",
+  "لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ",
+  "مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ",
+  "يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ",
+  "وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ",
+  "وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ",
+  "وَلَا يَئُودُهُ حِفْظُهُمَا",
+  "وَهُوَ الْعَلِيُّ الْعَظِيمُ"
+],
+
+    };
+
+    function updateSpeedLabel() {
+      speedVal.textContent = Number(speedSlider.value).toFixed(2) + '×';
+    }
+    updateSpeedLabel();
+    speedSlider.addEventListener('input', () => {
+      updateSpeedLabel();
+      if (currentAudio) currentAudio.playbackRate = Number(speedSlider.value);
+    });
+
+    function clearPlayingStyles() { buttons.forEach(b => b.classList.remove('playing')); }
+    function stopPlayback() {
+      playingAll = false;
+      if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+      clearPlayingStyles();
+      currentIndex = -1;
+    }
+    stopBtn.addEventListener('click', stopPlayback);
+
+    function playIndex(ix) {
+      const btn = buttons[ix];
+      if (!btn) return;
+      if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+      clearPlayingStyles();
+      btn.classList.add('playing');
+      const audio = new Audio(btn.dataset.file);
+      audio.playbackRate = Number(speedSlider.value);
+      currentAudio = audio;
+      currentIndex = ix;
+      remainingRepeats = Number(repeatCountInput.value || 1);
+      audio.addEventListener('ended', () => {
+        remainingRepeats--;
+        if (remainingRepeats > 0) { audio.currentTime = 0; audio.play(); }
+        else if (playingAll || autoAdvanceChk.checked) {
+          if (ix + 1 < buttons.length) playIndex(ix + 1);
+          else { playingAll = false; clearPlayingStyles(); }
+        } else clearPlayingStyles();
+      });
+      audio.play();
+    }
+
+    repeatAllBtn.addEventListener('click', () => { playingAll = true; playIndex(0); });
+
+    surahListEl.querySelectorAll('button.surah').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const surahKey = btn.dataset.surah;
+        const ayahs = surahs[surahKey];
+        ayahListEl.innerHTML = '';
+        ayahs.forEach((text, i) => {
+          const b = document.createElement('button');
+          b.className = 'ayah';
+          b.textContent = text;
+          b.dataset.file = `audio/${surahKey}${i+1}.mp3`;
+          b.addEventListener('click', () => { playingAll = false; playIndex(i); });
+          ayahListEl.appendChild(b);
+        });
+        buttons = Array.from(ayahListEl.querySelectorAll('button.ayah'));
+        surahListEl.style.display = 'none';
+        ayahListEl.style.display = 'grid';
+        backContainer.style.display = 'block';
+        controlsEl.classList.add('active');
+        footerEl.classList.add('active');
+      });
+    });
+
+    backBtn.addEventListener('click', () => {
+      stopPlayback();
+      ayahListEl.style.display = 'none';
+      backContainer.style.display = 'none';
+      controlsEl.classList.remove('active');
+      footerEl.classList.remove('active');
+      surahListEl.style.display = 'grid';
+    });
+  </script>
+</body>
+</html>
