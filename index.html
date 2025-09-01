@@ -26,6 +26,13 @@
     .primary{background:var(--btn);color:#fff}
     .primary:active{background:var(--btn-dark)}
     .muted{background:rgba(255,255,255,.08);color:var(--accent-2);border:1px solid rgba(255,255,255,.12)}
+
+    /* Dua cards */
+    .dua-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:14px 14px 10px}
+    .dua-ar{font-size:1.25rem;line-height:1.9;margin-bottom:6px}
+    .dua-ur{font-size:1.05rem;color:var(--accent-2);line-height:1.8;margin-bottom:10px}
+    .row{display:flex;gap:10px}
+    .row .ayah{flex:1;font-size:1rem;padding:10px}
   </style>
 </head>
 <body>
@@ -40,13 +47,20 @@
       <div id="categoryList" class="list">
         <button class="item" data-category="namaz">نماز</button>
         <button class="item" data-category="tilawat">تلاوت</button>
+        <button class="item" data-category="munajaat">مناجات مقبول</button>
       </div>
 
       <!-- Items inside a category (Namaz items or Surahs) -->
       <div id="itemList" class="list" style="display:none"></div>
 
-      <!-- Ayat list -->
+      <!-- Ayat list (for Namaz/Tilawat) -->
       <div id="ayahList" class="list" style="display:none"></div>
+
+      <!-- Munajaat: Days list -->
+      <div id="duaDaysList" class="list" style="display:none"></div>
+
+      <!-- Munajaat: Duas for a day -->
+      <div id="duaList" class="list" style="display:none"></div>
 
       <!-- Back -->
       <div id="backWrap" style="display:none;padding:0 20px 20px">
@@ -58,7 +72,7 @@
         <div class="group">
           <label for="repeatCount">دہرائی (Repeat) – بار</label>
           <input id="repeatCount" type="number" min="1" max="50" value="3" inputmode="numeric"/>
-          <div><label for="autoAdvance">خود اگلی آیت چلائیں</label> <input id="autoAdvance" type="checkbox" checked/></div>
+          <div><label for="autoAdvance">خود اگلی آڈیو چلائیں</label> <input id="autoAdvance" type="checkbox" checked/></div>
         </div>
         <div class="group">
           <label for="speed">رفتار (Speed)</label>
@@ -84,6 +98,9 @@
     const itemListEl = document.getElementById('itemList');
     const ayahListEl = document.getElementById('ayahList');
 
+    const duaDaysListEl = document.getElementById('duaDaysList');
+    const duaListEl = document.getElementById('duaList');
+
     const backWrap = document.getElementById('backWrap');
     const backBtn = document.getElementById('backBtn');
 
@@ -100,8 +117,10 @@
     // ---------- State ----------
     let currentAudio = null, currentIndex = -1, remainingRepeats = 1, playingAll = false;
     let buttons = [];
-    let currentCategory = null;  // 'namaz' | 'tilawat'
-    let currentKey = null;       // one of items inside a category
+    let currentView = 'categories'; // categories | items | ayahs | days | duas
+    let currentCategory = null;     // 'namaz' | 'tilawat' | 'munajaat'
+    let currentKey = null;          // item key (for namaz/tilawat)
+    let currentDayKey = null;       // day key (for munajaat)
 
     // ---------- Data ----------
     const namazKeys = ["takbeer","sanaa","tauz","tasmia","fatiha","ruku","tasmeeh","tahmeed","sajda","attahiyat","darood_ibrahimi","dua_rabbana","salaam"];
@@ -144,6 +163,71 @@
       ]
     };
 
+    // Munajaat: Days & Data
+    const duaDays = [
+      {key:'juma',    label:'جمعہ دعا'},
+      {key:'hafta',   label:'ہفتہ دعا'},
+      {key:'itwar',   label:'اتوار دعا'},
+      {key:'peer',    label:'پیر دعا'},
+      {key:'mangal',  label:'منگل دعا'},
+      {key:'budh',    label:'بدھ دعا'},
+      {key:'jumerat', label:'جمعرات دعا'},
+    ];
+
+    // ہر دن کے لیے مثال/Placeholder دعائیں — اپنے اصل متون یہاں رکھ دیں
+    // ہر آئٹم: { ar: "...", ur: "..." }
+    const munajaat = {
+      juma: [
+        { ar: "يَارَبِّ يَارَبِّ يَارَبِّ", ur: "اے ميرے پروردگار اے ميرے پروردگار اے ميرے پروردگار " },
+        { ar: "اَللّٰہُمَّ يَاكَبِيْرُ يَاسَمِيْعُ يَا بَصِيْرُ ", ur: "يا اللہ اے بڑائی والے اے سننے والے اے ديکھنے والے " },
+        { ar: "يَامَنْ لَّاشَرِيْكَ لَہٗ وَلَا وَزِيْرَلَہٗ", ur: "اے   وہ کہ جس کا نہ کوئی شريک ہے اور نہ مشير " },
+		{ ar: "وَيَاخَالِقَ   الشَّمْسِ وَالْقَمَرِ الْمُنِيْرِ ", ur: "اے آفتاب و ماہتابِ روشن کے پيدا کرنے والے " },
+		{ ar: " وَيَاعِصْمَةَ الْبَآىِٔسِ الْخَآىِٔفِ الْمُسْتَجِيْرِ", ur: "اور اے مصيبت زدہ، ترساں و پناہ جو کے ليے پناہ " },
+		{ ar: " وَيَارَازِقَ الطِّفْلِ الصَّغِيْرِ", ur: " اور اے ننھے بچے کی روزی پہنچانے والے " },
+		{ ar: "وَيَاجَابِرَ الْعَظْمِ الْكَسِيْرِ", ur: "اور اے ٹوٹی ہوئی ہڈی کے جوڑنے والے " },
+		{ ar: "اَدْعُوْكَ دُعَآءَ الْبَآىِٔسِ الْفَقِيْرِ كَدُعَآءِ الْمُضْطَرِّ الضَّرِيْرِ", ur: " ميں تجھ سے درخواست کرتا ہوں مصيبت زدہ محتاج کی سی درخواست، بے قرار آفت زدہ کی سی درخواست " },
+		{ ar: "اَسْأَلُكَ بِمَعَاقِدِ الْعِزِّمِنْ عَرْشِكَ وَبِمَفَاتِيْحِ الرَّحْمَةِ مِنْ كِتَابِكَ", ur: " تجھ سے سوال کرتا ہوں تيرے عرش کے بلند ہائے عزّت کے واسطہ سے اور  تيری کتاب کی کليد ہائے رحمت کے واسطہ سے " },
+		{ ar: "وَبِالْاَسْمَآءِ الثَّمَانِيَةِ الْمَكْتُوْبَةِ عَليٰ قَرْنِ الشَّمْسِ اَنْ تَجْعَلَ الْقُرْاٰنَ رَبِيْعَ قَلْبِيْ وَجِلَآءَ حُزْنِيْ", ur: " اور  ان آٹھ ناموں کے واسطہ سے جو رُخِ آفتاب پر لکھے ہوئے ہيں، يہ کہ قرآن کو ميرے دِل کی بہار اور ميرے غم کی کشائش بنا دے۔ " },
+		{ ar: "رَبَّناۤ اٰتِنَا فِي الدُّنْيَا ﴿ كَذَاوَكَذَا﴾ ", ur: "اے ہمارے پروردگار ہمىں دُنىا مىں فلاں فلاں چىز عطا کر " },
+		{ ar: "يَا مُوْنِسَ كُلِّ وَحِيْدٍ", ur: "اے غمگسار ہر اکىلے کے  " },
+		{ ar: " وَّيَاصَاحِبَ كُلِّ فَرِيْدٍ", ur: "اور اے رفىق ہر تنہا کے  " },
+		{ ar: "وَّيَا قَرِيْبًا غَيْرَ بَعِيْدٍ وَّيَا شَاہِدًا غَيْرَ غَآىِٔبٍ", ur: "اور اےاىسےقرىب جو بعىدنہىں اور اے اىسے حاضر جو غائب نہىں " },
+		{ ar: " وَّيَاغَالِبًا غَيْرَ مَغْلُوْبٍ، يَّاحَيُّ يَاقَيُّوْمُ", ur: " اور اے اىسے غالب جو مغلوب نہىں اور ىا حى ىا قىوم " },
+		{ ar: "يَاذَالْجَلَالِ وَالْاِكْرَامِ", ur: " اے بزرگى اور عظمت والے  " },
+		{ ar: "يَانُوْرَ السَّمٰوٰتِ وَالْاَرْضِ، وَيَازَيْنَ السَّمٰوٰتِ وَالْاَرْضِ", ur: "اور اے آسمانوں اور زمىن کے نور اور اے آسمانوں اور زمىن کى زىنت " },
+		{ ar: "يَاجَبَّارَ السَّمٰوٰتِ وَالْاَرْضِ", ur: " اے انتظام رکھنے والے آسمانوں اور زمىنوں کے " },
+		{ ar: "يَا عِمَادَ السَّمٰوٰتِ وَالْاَرْضِ", ur: " اور اے آسمانوں اور زمىن کے تھامنے والے " },
+		{ ar: " يَابَدِيْعَ السَّمٰوٰتِ وَالْاَرْضِ", ur: " اور اے آسمانوں اور زمىن کے موجد " },
+		{ ar: " وَيَاقَيَّامَ السَّمٰوٰتِ وَالْاَرْضِ", ur: " اور اے آسمانوں اور زمىن کے قائم رکھنے والے  " },
+		{ ar: "يَاذَالْجَلَالِ وَالْاِكْرَامِ يَاصَرِيْخَ الْمُسْتَصْرِخِيْنَ وَمُنْتَہَي الْعَآىِٔذِيْنَ", ur: "اور اے بزرگى اور عظمت والے اے فرىادىوں کے داد رس اور پناہ مانگنے والوں کى آخرى دوڑ " },
+		{ ar: " وَالْمُفَرِّجُ عَنِ الْمَكْرُوْبِيْنَ", ur: " اور اے بے چىنوں کے کشائش دىنے والے " },
+		{ ar: " وَالْمُرَوِِّحُ عَنِ الْمَغْمُوْمِيْنَ، وَمُجِيْبَ دُعَآءِ الْمُضْطَرِّيْنَ", ur: " اور غمزدوں کے راحت دىنے والے اور بے قراروں کى دُعا قبول کرنے والے  " },
+		{ ar: "وَيَاكَاشِفَ الْمَكْرُوْبِ", ur: "اور اے صاحبِ کرب کو شفا دىنے والے  " },
+		{ ar: " يَاۤاِلٰہَ الْعٰلَمِيْنَ وَ يَاۤاَرْحَمَ الرّٰاحِمِيْنَ مَنْزُوْلٌۭ بِكَ كُلُّ حَاجَۃٍ", ur: "اے الٰہ العالمىن اور اے سب رحم کرنے والوں سے بڑھ کر رحم کرنے والے، تىرے ہى سامنے ہر حاجت پىش ہے۔ " },
+		  ],
+		  
+      hafta: [
+        { ar: "— یہاں ہفتہ کی عربی دعا ۱ —", ur: "— یہاں اردو ترجمہ ۱ —" },
+        { ar: "— یہاں ہفتہ کی عربی دعا ۲ —", ur: "— یہاں اردو ترجمہ ۲ —" },
+      ],
+      itwar: [
+        { ar: "— یہاں اتوار کی عربی دعا ۱ —", ur: "— یہاں اردو ترجمہ ۱ —" },
+      ],
+      peer: [
+        { ar: "— یہاں پیر کی عربی دعا ۱ —", ur: "— یہاں اردو ترجمہ ۱ —" },
+      ],
+      mangal: [
+        { ar: "— یہاں منگل کی عربی دعا ۱ —", ur: "— یہاں اردو ترجمہ ۱ —" },
+      ],
+      budh: [
+        { ar: "— یہاں بدھ کی عربی دعا ۱ —", ur: "— یہاں اردو ترجمہ ۱ —" },
+      ],
+      jumerat: [
+        { ar: "— یہاں جمعرات کی عربی دعا ۱ —", ur: "— یہاں اردو ترجمہ ۱ —" },
+      ],
+
+    };
+
     // ---------- Helpers ----------
     function setCrumbs(parts){ crumbsEl.textContent = parts.filter(Boolean).join(" › "); }
     function updateSpeedLabel(){ speedVal.textContent = Number(speedSlider.value).toFixed(2)+'×'; }
@@ -171,39 +255,31 @@
     }
     repeatAllBtn.addEventListener('click',()=>{ playingAll=true; playIndex(0); });
 
-    // ---------- Navigation ----------
-    // 1) Category click -> build items list
-    categoryListEl.querySelectorAll('button.item').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        currentCategory = btn.dataset.category; // 'namaz' | 'tilawat'
-        titleEl.textContent = currentCategory==='namaz' ? 'نماز – اذکار و قراءت' : 'تلاوت – سورتیں و آیات';
-        setCrumbs([ currentCategory==='namaz' ? 'نماز' : 'تلاوت' ]);
+    // ---------- Build Lists ----------
+    function openCategory(cat){
+      currentCategory = cat;
+      if(cat==='namaz'){ titleEl.textContent='نماز – اذکار و قراءت'; setCrumbs(['نماز']); buildItems(namazKeys); show('items'); }
+      else if(cat==='tilawat'){ titleEl.textContent='تلاوت – سورتیں و آیات'; setCrumbs(['تلاوت']); buildItems(tilawatKeys); show('items'); }
+      else if(cat==='munajaat'){ titleEl.textContent='مناجات مقبول – ایام'; setCrumbs(['مناجات مقبول']); buildDuaDays(); show('days'); }
+    }
 
-        itemListEl.innerHTML = '';
-        const keys = currentCategory==='namaz' ? namazKeys : tilawatKeys;
-        keys.forEach(key=>{
-          const b = document.createElement('button');
-          b.className = 'item';
-          b.textContent = titles[key] || key;
-          b.dataset.key = key;
-          b.addEventListener('click', ()=> openKey(key));
-          itemListEl.appendChild(b);
-        });
-
-        categoryListEl.style.display='none';
-        itemListEl.style.display='grid';
-        backWrap.style.display='block';
-        controlsEl.classList.remove('active');
-        footerEl.classList.remove('active');
+    function buildItems(keys){
+      itemListEl.innerHTML='';
+      keys.forEach(key=>{
+        const b=document.createElement('button');
+        b.className='item';
+        b.textContent=titles[key]||key;
+        b.dataset.key=key;
+        b.addEventListener('click',()=>openKey(key));
+        itemListEl.appendChild(b);
       });
-    });
+    }
 
-    // 2) Inside a key -> show ayat buttons
     function openKey(key){
       currentKey = key;
-      setCrumbs([ currentCategory==='namaz'?'نماز':'تلاوت', titles[key] || key ]);
+      setCrumbs([ currentCategory==='namaz'?'نماز':'تلاوت', titles[key]||key ]);
       const ayahs = surahs[key] || [];
-      ayahListEl.innerHTML = '';
+      ayahListEl.innerHTML='';
       ayahs.forEach((text,i)=>{
         const b=document.createElement('button');
         b.className='ayah';
@@ -213,32 +289,109 @@
         ayahListEl.appendChild(b);
       });
       buttons = Array.from(ayahListEl.querySelectorAll('button.ayah'));
-      itemListEl.style.display='none';
-      ayahListEl.style.display='grid';
-      controlsEl.classList.add('active');
-      footerEl.classList.add('active');
+      show('ayahs');
     }
 
-    // 3) Back behaviour
-    backBtn.addEventListener('click', ()=>{
-      if(ayahListEl.style.display==='grid'){
-        stopPlayback();
-        ayahListEl.style.display='none';
-        itemListEl.style.display='grid';
-        controlsEl.classList.remove('active'); footerEl.classList.remove('active');
-        setCrumbs([ currentCategory==='namaz'?'نماز':'تلاوت' ]);
-        return;
+    function buildDuaDays(){
+      duaDaysListEl.innerHTML='';
+      duaDays.forEach(d=>{
+        const b=document.createElement('button');
+        b.className='item';
+        b.textContent=d.label;
+        b.dataset.day=d.key;
+        b.addEventListener('click',()=>openDay(d.key, d.label));
+        duaDaysListEl.appendChild(b);
+      });
+    }
+
+    function duaAudioPath(dayKey, i, lang){ // lang: 'ar' | 'ur'
+      return `audio/munajaat/${dayKey}${i+1}-${lang}.mp3`;
+    }
+
+    function openDay(dayKey, dayLabel){
+      currentDayKey = dayKey;
+      titleEl.textContent = `مناجات مقبول – ${dayLabel}`;
+      setCrumbs(['مناجات مقبول', dayLabel]);
+
+      const items = munajaat[dayKey] || [];
+      duaListEl.innerHTML='';
+      items.forEach((du,i)=>{
+        const card=document.createElement('div'); card.className='dua-card';
+
+        const ar=document.createElement('div'); ar.className='dua-ar'; ar.textContent=du.ar||'';
+        const ur=document.createElement('div'); ur.className='dua-ur'; ur.textContent=du.ur||'';
+
+        const row=document.createElement('div'); row.className='row';
+        const bAr=document.createElement('button');
+        bAr.className='ayah'; bAr.textContent='▶ عربی آڈیو';
+        bAr.dataset.file = duaAudioPath(dayKey,i,'ar');
+        bAr.addEventListener('click',()=>{ playingAll=false; playIndex(buttons.indexOf(bAr)); });
+
+        const bUr=document.createElement('button');
+        bUr.className='ayah'; bUr.textContent='▶ ترجمہ آڈیو';
+        bUr.dataset.file = duaAudioPath(dayKey,i,'ur');
+        bUr.addEventListener('click',()=>{ playingAll=false; playIndex(buttons.indexOf(bUr)); });
+
+        row.appendChild(bAr); row.appendChild(bUr);
+        card.appendChild(ar); card.appendChild(ur); card.appendChild(row);
+        duaListEl.appendChild(card);
+      });
+
+      // ترتیب کے مطابق موجودہ ویو کے تمام آڈیو بٹن پکڑ لیں
+      buttons = Array.from(duaListEl.querySelectorAll('button.ayah'));
+      show('duas');
+    }
+
+    // ---------- View Switcher ----------
+    function show(view){
+      // hide all
+      categoryListEl.style.display='none';
+      itemListEl.style.display='none';
+      ayahListEl.style.display='none';
+      duaDaysListEl.style.display='none';
+      duaListEl.style.display='none';
+      controlsEl.classList.remove('active');
+      footerEl.classList.remove('active');
+
+      if(view==='categories'){
+        categoryListEl.style.display='grid'; backWrap.style.display='none';
+        titleEl.textContent='الکوثر – نماز و تلاوت'; setCrumbs([]);
       }
-      if(itemListEl.style.display==='grid'){
-        stopPlayback();
-        itemListEl.style.display='none';
-        categoryListEl.style.display='grid';
-        backWrap.style.display='none';
-        controlsEl.classList.remove('active'); footerEl.classList.remove('active');
-        setCrumbs([]); titleEl.textContent='الکوثر – نماز و تلاوت';
-        currentCategory=null; currentKey=null;
+      if(view==='items'){
+        itemListEl.style.display='grid'; backWrap.style.display='block';
       }
+      if(view==='ayahs'){
+        ayahListEl.style.display='grid'; backWrap.style.display='block';
+        controlsEl.classList.add('active'); footerEl.classList.add('active');
+      }
+      if(view==='days'){
+        duaDaysListEl.style.display='grid'; backWrap.style.display='block';
+      }
+      if(view==='duas'){
+        duaListEl.style.display='grid'; backWrap.style.display='block';
+        controlsEl.classList.add('active'); footerEl.classList.add('active');
+      }
+      currentView = view;
+    }
+
+    // ---------- Events ----------
+    // Category clicks
+    categoryListEl.querySelectorAll('button.item').forEach(btn=>{
+      btn.addEventListener('click',()=>openCategory(btn.dataset.category));
     });
+
+    // Back behaviour
+    backBtn.addEventListener('click', ()=>{
+      stopPlayback();
+      if(currentView==='duas'){ show('days'); setCrumbs(['مناجات مقبول']); titleEl.textContent='مناجات مقبول – ایام'; return; }
+      if(currentView==='days'){ show('categories'); return; }
+      if(currentView==='ayahs'){ show('items'); setCrumbs([ currentCategory==='namaz'?'نماز':'تلاوت' ]); return; }
+      if(currentView==='items'){ show('categories'); return; }
+      show('categories');
+    });
+
+    // Init
+    show('categories');
   </script>
 </body>
 </html>
