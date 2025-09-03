@@ -56,8 +56,29 @@
     .primary:active{background:var(--btn-dark)}
     .muted{background:rgba(255,255,255,.08);color:var(--accent-2);border:1px solid rgba(255,255,255,.12)}
 
-    /* inline repeat control */
-    .repeat-inline{display:flex;align-items:center;gap:8px;flex:1.2;justify-content:center}
+    /* already present */
+.repeat-inline{display:flex;align-items:center;gap:8px;justify-content:center}
+
+/* make the global one a bit compact */
+.repeat-global{flex:1}
+.mini-btn{
+  padding:8px 10px;
+  border-radius:10px;
+  font-weight:900;
+  line-height:1;
+}
+#repeatGlobalFooter{
+  width:60px;
+  padding:8px 6px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  text-align:center;
+  font-weight:700;
+}
+.hint{opacity:.85}
+
     #repeatTimesFooter{
       width:64px;padding:10px 8px;border-radius:10px;
       border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);
@@ -112,17 +133,27 @@
       </section>
 
       <!-- Sticky Footer -->
-      <div id="footer" class="footer">
-        <button id="backFooterBtn" class="muted">⬅️ واپس</button>
-        <button id="stopBtn" class="muted">روکیں</button>
+<div id="footer" class="footer">
+  <button id="backFooterBtn" class="muted">⬅️ واپس</button>
+  <button id="stopBtn" class="muted">روکیں</button>
 
-        <div class="repeat-inline">
-          <input id="repeatTimesFooter" type="number" min="1" max="50" value="1" inputmode="numeric" aria-label="Repeat times">
-          <button id="repeatTimesBtn" class="muted">🔁 دہرائیں ×</button>
-        </div>
+  <!-- Current item repeat ×N -->
+  <div class="repeat-inline">
+    <input id="repeatTimesFooter" type="number" min="1" max="50" value="1" inputmode="numeric" aria-label="Repeat times">
+    <button id="repeatTimesBtn" class="muted">🔁 دہرائیں ×</button>
+  </div>
 
-        <button id="repeatAllBtn" class="primary">سب چلائیں</button>
-      </div>
+  <!-- 🔹 Global Repeat synced with top control -->
+  <div class="repeat-inline repeat-global">
+    <button id="decGlobal" class="muted mini-btn">−</button>
+    <input id="repeatGlobalFooter" type="number" min="1" max="50" value="3" inputmode="numeric" aria-label="Global repeat">
+    <button id="incGlobal" class="muted mini-btn">+</button>
+    <span class="hint">🔁</span>
+  </div>
+
+  <button id="repeatAllBtn" class="primary">سب چلائیں</button>
+</div>
+
     </main>
   </div>
 
@@ -154,6 +185,11 @@
     const autoAdvanceChk = document.getElementById('autoAdvance');
     const speedSlider = document.getElementById('speed');
     const speedVal = document.getElementById('speedVal');
+	
+	const decGlobal = document.getElementById('decGlobal');
+const incGlobal = document.getElementById('incGlobal');
+const repeatGlobalFooter = document.getElementById('repeatGlobalFooter');
+
 
     // ---------- State ----------
     let currentAudio = null, currentIndex = -1, remainingRepeats = 1, playingAll = false;
@@ -481,6 +517,37 @@
       const n = Math.max(1, Math.min(50, Number(repeatTimesFooter.value)||1));
       playCurrentNTimes(n);
     });
+// set footer global = top control on load
+repeatGlobalFooter.value = repeatCountInput.value;
+
+// top -> footer sync
+repeatCountInput.addEventListener('input', ()=>{
+  const v = Math.max(1, Math.min(50, Number(repeatCountInput.value)||1));
+  repeatCountInput.value = v;
+  repeatGlobalFooter.value = v;
+});
+
+// footer -> top sync (typing)
+repeatGlobalFooter.addEventListener('input', ()=>{
+  const v = Math.max(1, Math.min(50, Number(repeatGlobalFooter.value)||1));
+  repeatGlobalFooter.value = v;
+  repeatCountInput.value = v;
+});
+
+// footer +/- buttons
+decGlobal.addEventListener('click', ()=>{
+  let v = Math.max(1, Math.min(50, Number(repeatGlobalFooter.value)||1));
+  v = Math.max(1, v - 1);
+  repeatGlobalFooter.value = v;
+  repeatCountInput.value = v;
+});
+incGlobal.addEventListener('click', ()=>{
+  let v = Math.max(1, Math.min(50, Number(repeatGlobalFooter.value)||1));
+  v = Math.min(50, v + 1);
+  repeatGlobalFooter.value = v;
+  repeatCountInput.value = v;
+});
+
 
     // Init
     show('categories');
