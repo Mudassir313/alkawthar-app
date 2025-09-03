@@ -7,12 +7,14 @@
   <style>
     :root { --bg:#0b3d2e; --accent:#a3d9c9; --accent-2:#dff3ed; --text:#fff; --btn:#1aa37a; --btn-dark:#108663; }
     *{box-sizing:border-box}
+    html,body{height:100%}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,"Noto Naskh Arabic","Noto Sans Arabic",sans-serif;background:radial-gradient(1200px 700px at 70% -10%,#146c54 0%,#0b3d2e 50%,#06231a 100%);color:var(--text);min-height:100svh;display:grid;place-items:center;padding:24px}
     .app{width:100%;max-width:680px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,.25);backdrop-filter:blur(6px)}
-    header{padding:20px 20px 0;text-align:center}
+    header{padding:20px 20px 0;text-align:center;position:sticky;top:0}
     h1{margin:0 0 6px;font-size:1.6rem;font-weight:800}
     .crumbs{padding:0 20px 10px;color:var(--accent-2)}
-    .list{padding:20px;display:grid;gap:12px}
+    main{max-height:calc(100svh - 24px - 24px);overflow:auto;border-radius:0 0 20px 20px}
+    .list{padding:20px;display:grid;gap:12px;scroll-margin-block:80px}
     button.item,button.ayah,button.back{width:100%;border:0;border-radius:16px;padding:16px;text-align:center;cursor:pointer;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.12);color:#fff;font-size:1.15rem;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.25)}
     button.ayah.playing{outline:3px solid var(--accent);box-shadow:0 0 0 4px rgba(163,217,201,.18),0 10px 26px rgba(0,0,0,.35)}
     .controls{display:none;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px 16px}
@@ -20,7 +22,7 @@
     .controls .group{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px 12px}
     .controls label{display:block;font-size:.85rem;color:var(--accent-2);margin-bottom:6px}
     .controls input{width:100%}
-    .footer{display:none;padding:0 20px 20px;gap:10px}
+    .footer{display:none;padding:0 20px 20px;gap:10px;position:sticky;bottom:0;background:linear-gradient(180deg,rgba(11,61,46,0),rgba(11,61,46,0.6))}
     .footer.active{display:flex}
     .footer button{flex:1;padding:12px;border-radius:12px;border:0;font-weight:700;cursor:pointer;font-size:1rem}
     .primary{background:var(--btn);color:#fff}
@@ -35,7 +37,7 @@
       <div id="crumbs" class="crumbs"></div>
     </header>
 
-    <main>
+    <main id="scrollContainer">
       <!-- Categories -->
       <div id="categoryList" class="list">
         <button class="item" data-category="namaz">نماز</button>
@@ -159,17 +161,17 @@
     // Munajaat: Days & (Arabic-only) text
     const duaDays = [
       {key:'juma',    label:'جمعہ دعا'},
-    //  {key:'hafta',   label:'ہفتہ دعا'},
+     // {key:'hafta',   label:'ہفتہ دعا'},
    //   {key:'itwar',   label:'اتوار دعا'},
-      // {key:'peer',    label:'پیر دعا'},
-    //  {key:'mangal',  label:'منگل دعا'},
-  //    {key:'budh',    label:'بدھ دعا'},
- //     {key:'jumerat', label:'جمعرات دعا'},
+    //  {key:'peer',    label:'پیر دعا'},
+      //{key:'mangal',  label:'منگل دعا'},
+     // {key:'budh',    label:'بدھ دعا'},
+     // {key:'jumerat', label:'جمعرات دعا'},
     ];
 
-    // ہر دن کے لیے صرف عربی لائنیں — اپنی اصل دعائیں یہاں رکھ دیں
+    // Each day: Arabic-only lines (edit with your real content)
     const munajaatAR = {
-        juma:   ["نَحْمَدُكَ يَا خَيْرَ مَأْمُوْلٍ","  وَاَكْرَمَ مَسْئُوْلٍ","عَليٰ مَا عَلَّمْتَنَا مِنَ الْمُنَاجَاةِ الْمَقْبُوْلِ","مِنْ قُرُبٰتٍ عِنْدَاللّٰہِ وَصَلَوٰتِ الرَّسُوْلِ","فَصَلِّ عَلَيْہِ مَااخْتَلَفَ الدَّبُوْرُ وَالْقَبُوْلُ","وَانْشَعَبَتِ الْفُرُوْعُ مِنَ الْاُصُوْلِ","ثُمَّ نَسْئَلُكَ بِمَا سَنَقُوْلُ","وَمِنَّا السُّؤَالُ وَمِنْكَ الْقُبُوْلُ","يَارَبِّ يَارَبِّ يَارَبِّ",  "اَللّٰہُمَّ يَاكَبِيْرُ يَاسَمِيْعُ يَا بَصِيْرُ ", "يَامَنْ لَّاشَرِيْكَ لَہٗ وَلَا وَزِيْرَلَہٗ", "وَيَاخَالِقَ   الشَّمْسِ وَالْقَمَرِ الْمُنِيْرِ ",  " وَيَاعِصْمَةَ الْبَآىِٔسِ الْخَآىِٔفِ الْمُسْتَجِيْرِ",  " وَيَارَازِقَ الطِّفْلِ الصَّغِيْرِ",  "وَيَاجَابِرَ الْعَظْمِ الْكَسِيْرِ",  "اَدْعُوْكَ دُعَآءَ الْبَآىِٔسِ الْفَقِيْرِ كَدُعَآءِ الْمُضْطَرِّ الضَّرِيْرِ", 		 "اَسْأَلُكَ بِمَعَاقِدِ الْعِزِّمِنْ عَرْشِكَ وَبِمَفَاتِيْحِ الرَّحْمَةِ مِنْ كِتَابِكَ",  "وَبِالْاَسْمَآءِ الثَّمَانِيَةِ الْمَكْتُوْبَةِ عَليٰ قَرْنِ الشَّمْسِ اَنْ تَجْعَلَ الْقُرْاٰنَ رَبِيْعَ قَلْبِيْ وَجِلَآءَ حُزْنِيْ",  
+       juma:   ["نَحْمَدُكَ يَا خَيْرَ مَأْمُوْلٍ","  وَاَكْرَمَ مَسْئُوْلٍ","عَليٰ مَا عَلَّمْتَنَا مِنَ الْمُنَاجَاةِ الْمَقْبُوْلِ","مِنْ قُرُبٰتٍ عِنْدَاللّٰہِ وَصَلَوٰتِ الرَّسُوْلِ","فَصَلِّ عَلَيْہِ مَااخْتَلَفَ الدَّبُوْرُ وَالْقَبُوْلُ","وَانْشَعَبَتِ الْفُرُوْعُ مِنَ الْاُصُوْلِ","ثُمَّ نَسْئَلُكَ بِمَا سَنَقُوْلُ","وَمِنَّا السُّؤَالُ وَمِنْكَ الْقُبُوْلُ","يَارَبِّ يَارَبِّ يَارَبِّ",  "اَللّٰہُمَّ يَاكَبِيْرُ يَاسَمِيْعُ يَا بَصِيْرُ ", "يَامَنْ لَّاشَرِيْكَ لَہٗ وَلَا وَزِيْرَلَہٗ", "وَيَاخَالِقَ   الشَّمْسِ وَالْقَمَرِ الْمُنِيْرِ ",  " وَيَاعِصْمَةَ الْبَآىِٔسِ الْخَآىِٔفِ الْمُسْتَجِيْرِ",  " وَيَارَازِقَ الطِّفْلِ الصَّغِيْرِ",  "وَيَاجَابِرَ الْعَظْمِ الْكَسِيْرِ",  "اَدْعُوْكَ دُعَآءَ الْبَآىِٔسِ الْفَقِيْرِ كَدُعَآءِ الْمُضْطَرِّ الضَّرِيْرِ", 		 "اَسْأَلُكَ بِمَعَاقِدِ الْعِزِّمِنْ عَرْشِكَ وَبِمَفَاتِيْحِ الرَّحْمَةِ مِنْ كِتَابِكَ",  "وَبِالْاَسْمَآءِ الثَّمَانِيَةِ الْمَكْتُوْبَةِ عَليٰ قَرْنِ الشَّمْسِ اَنْ تَجْعَلَ الْقُرْاٰنَ رَبِيْعَ قَلْبِيْ وَجِلَآءَ حُزْنِيْ",  
 		 "رَبَّناۤ اٰتِنَا فِي الدُّنْيَا ﴿ كَذَاوَكَذَا﴾ ",  
 		 "يَا مُوْنِسَ كُلِّ وَحِيْدٍ",  " وَّيَاصَاحِبَ كُلِّ فَرِيْدٍ", "وَّيَا قَرِيْبًا غَيْرَ بَعِيْدٍ وَّيَا شَاہِدًا غَيْرَ غَآىِٔبٍ", " وَّيَاغَالِبًا غَيْرَ مَغْلُوْبٍ، يَّاحَيُّ يَاقَيُّوْمُ",   "يَاذَالْجَلَالِ وَالْاِكْرَامِ",  "يَانُوْرَ السَّمٰوٰتِ وَالْاَرْضِ، وَيَازَيْنَ السَّمٰوٰتِ وَالْاَرْضِ",   "يَاجَبَّارَ السَّمٰوٰتِ وَالْاَرْضِ",  "يَا عِمَادَ السَّمٰوٰتِ وَالْاَرْضِ",  " يَابَدِيْعَ السَّمٰوٰتِ وَالْاَرْضِ", " وَيَاقَيَّامَ السَّمٰوٰتِ وَالْاَرْضِ",  "يَاذَالْجَلَالِ وَالْاِكْرَامِ يَاصَرِيْخَ الْمُسْتَصْرِخِيْنَ وَمُنْتَہَي الْعَآىِٔذِيْنَ",  " وَالْمُفَرِّجُ عَنِ الْمَكْرُوْبِيْنَ",  " وَالْمُرَوِِّحُ عَنِ الْمَغْمُوْمِيْنَ، وَمُجِيْبَ دُعَآءِ الْمُضْطَرِّيْنَ",  "وَيَاكَاشِفَ الْمَكْرُوْبِ",   " يَاۤاِلٰہَ الْعٰلَمِيْنَ وَ يَاۤاَرْحَمَ الرّٰاحِمِيْنَ مَنْزُوْلٌۭ بِكَ كُلُّ حَاجَۃٍ",  
 	"اَللّٰہُمَّ اِنَّكَ خَلَّا قٌ عَظِیْمٌ"," اِنَّكَ سَمِیْعٌ عَلِیْمٌ ","اِنَّكَ غَفُوْرٌ رَّحِیْمٌ"," اِنَّكَ رَبُّ الْعَرْشِ الْعَظِیْمِ","اَللّٰہُمَّ اِنَّكَ الْبَرُّ الْجَوَّادُ الْكَرِیْمُ ","اغْفِرْلِیْ وَارْحَمْنِیْ وَعَافِنِیْ"," وَارْزُقْنِیْ وَاسْتُرْنِیْ  وَاجْبُرْنِیْ"," وَارْفَعْنِیْ  وَاہْدِنِیْ وَلَا تُضِلَّنِیْ"," وَاَدْخِلْنِیَ الْجَنَّۃَ بِرَحْمَتِكَ یَاۤاَرْحَمَ الرّٰحِمِیْنَ","اِلَیْكَ رَبِّ فَحَبِّبْنِیْ"," وَفِیْ نَفْسِیْ لَكَ فَذَلِّلْنِیْ ","وَفِیْۤ اَعْیُنِ النَّاسِ فَعَظِّمْنِیْ ","وَمِنْ سَیِّءِ الْاَخْلَاقِ  فَجَنِّبْنِیْ"," اَللّٰہُمَّ اِنَّكَ سَاَلْتَنَا مِنْ اَنْفُسِنَا مَالَا نَمْلِكُہٗۤ اِلَّابِكَ ","فَاَعْطِنَا مِنْہَامَا یُرْضِیْكَ عَنَّا",
@@ -218,12 +220,18 @@
 "وَصَلَّی اللہُ تَعَالیٰ عَلیٰ سَیِّدِ الْکَآىِٔنَاتِ وَ اَکْرَمِ الْمَخْلُوْقَاتِ",
 "صَلٰوۃً تَسْبِقُ الْغَایَاتِ"
 	 ],
-    //  hafta:  ["— ہفتہ: عربی دعا ۱ —","— ہفتہ: عربی دعا ۲ —"],
+  //    hafta:  ["— ہفتہ: عربی دعا ۱ —","— ہفتہ: عربی دعا ۲ —"],
    //   itwar:  ["— اتوار: عربی دعا ۱ —"],
-     //  peer:   ["— پیر: عربی دعا ۱ —"],
-      // mangal: ["— منگل: عربی دعا ۱ —"],
-      // budh:   ["— بدھ: عربی دعا ۱ —"],
-      // jumerat:["— جمعرات: عربی دعا ۱ —"]
+  //    peer:   ["— پیر: عربی دعا ۱ —"],
+  //    mangal: ["— منگل: عربی دعا ۱ —"],
+  //    budh:   ["— بدھ: عربی دعا ۱ —"],
+   //   jumerat:["— جمعرات: عربی دعا ۱ —"]
+    };
+
+    // 🔹 Pause points for Munajaat (0-based indices). Example: pause AFTER index 1 (i.e., after second dua) on Juma
+    const munajaatPauses = {
+      juma: [18] // e.g. plays 0, then 1, then PAUSE. Click manually to play 2.
+      // Add more like: hafta: [0,2], itwar: [0], ...
     };
 
     // ---------- Helpers ----------
@@ -233,24 +241,77 @@
     speedSlider.addEventListener('input',()=>{ updateSpeedLabel(); if(currentAudio) currentAudio.playbackRate = Number(speedSlider.value); });
 
     function clearPlayingStyles(){ buttons.forEach(b=>b.classList.remove('playing')); }
-    function stopPlayback(){ playingAll=false; if(currentAudio){ currentAudio.pause(); currentAudio=null; } clearPlayingStyles(); currentIndex=-1; }
+
+    function autoScroll(el){
+      // ensure the playing item stays visible & centered
+      try { el.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'}); } catch(e){}
+    }
+
+    function stopPlayback(){
+      playingAll=false;
+      if(currentAudio){ currentAudio.pause(); currentAudio=null; }
+      clearPlayingStyles();
+      currentIndex=-1;
+    }
     stopBtn.addEventListener('click', stopPlayback);
 
-    function playIndex(ix){
-      const btn = buttons[ix]; if(!btn) return;
-      if(currentAudio){ currentAudio.pause(); currentAudio=null; }
-      clearPlayingStyles(); btn.classList.add('playing');
-      const audio = new Audio(btn.dataset.file); audio.playbackRate = Number(speedSlider.value);
-      currentAudio = audio; currentIndex = ix; remainingRepeats = Number(repeatCountInput.value || 1);
-      audio.addEventListener('ended', ()=>{
-        remainingRepeats--;
-        if(remainingRepeats>0){ audio.currentTime=0; audio.play(); }
-        else if(playingAll || autoAdvanceChk.checked){
-          if(ix+1<buttons.length) playIndex(ix+1); else { playingAll=false; clearPlayingStyles(); }
-        } else clearPlayingStyles();
-      });
-      audio.play();
+    function shouldPauseAfter(ix){
+      // pause points only for Munajaat 'duas' view
+      if(currentView!=='duas' || !currentDayKey) return false;
+      const arr = munajaatPauses[currentDayKey] || [];
+      return arr.includes(ix);
     }
+
+   function playIndex(ix){
+  const btn = buttons[ix]; if(!btn) return;
+
+  // آیا یہ آئٹم pause-point ہے؟ (صرف مناجات میں معنی رکھتا ہے)
+  const pauseThisItem = shouldPauseAfter(ix);
+
+  if(currentAudio){ currentAudio.pause(); currentAudio=null; }
+  clearPlayingStyles();
+  btn.classList.add('playing');
+  autoScroll(btn); // keep visible
+
+  const audio = new Audio(btn.dataset.file);
+  audio.playbackRate = Number(speedSlider.value);
+  currentAudio = audio; currentIndex = ix;
+
+  // 🔸 اگر pause-point ہے تو ہمیشہ صرف 1 بار چلائیں، ورنہ repeatCount کے مطابق
+  remainingRepeats = pauseThisItem ? 1 : Number(repeatCountInput.value || 1);
+
+  audio.addEventListener('ended', ()=>{
+    remainingRepeats--;
+
+    // مزید دہرانا ہے؟
+    if(remainingRepeats > 0){
+      audio.currentTime = 0; audio.play();
+      return;
+    }
+
+    // 🔸 pause-point: یہیں رُک جائیں (highlight برقرار رہے)، اگلا خود نہ چلائیں
+    if(pauseThisItem){
+      playingAll = false;
+      return;
+    }
+
+    // ورنہ عمومی آٹو ایڈوانس
+    if(playingAll || autoAdvanceChk.checked){
+      if(ix + 1 < buttons.length){
+        playIndex(ix + 1);
+      } else {
+        playingAll = false;
+        clearPlayingStyles();
+      }
+    } else {
+      clearPlayingStyles();
+    }
+  });
+
+  audio.play();
+}
+
+
     repeatAllBtn.addEventListener('click',()=>{ playingAll=true; playIndex(0); });
 
     // ---------- Build Lists ----------
@@ -319,11 +380,16 @@
         b.textContent=text;
         b.dataset.file = duaAudioPath(dayKey,i);
         b.addEventListener('click',()=>{ playingAll=false; playIndex(buttons.indexOf(b)); });
+        // If you prefer to mark pauses on buttons themselves:
+        if((munajaatPauses[dayKey]||[]).includes(i)){
+          b.title = "Pause after this dua";
+          b.dataset.pauseAfter = "1"; // (not required by logic; we use map above)
+        }
         duaListEl.appendChild(b);
       });
 
       buttons = Array.from(duaListEl.querySelectorAll('button.ayah'));
-      show('duas'); // controls/footer enabled (repeat/speed/auto-advance work same as others)
+      show('duas'); // controls/footer enabled
     }
 
     // ---------- View Switcher ----------
@@ -356,6 +422,10 @@
         controlsEl.classList.add('active'); footerEl.classList.add('active');
       }
       currentView = view;
+
+      // keep the highlighted item in view when switching back
+      const currentBtn = buttons[currentIndex];
+      if(currentBtn) autoScroll(currentBtn);
     }
 
     // ---------- Events ----------
